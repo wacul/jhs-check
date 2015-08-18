@@ -43,6 +43,12 @@ func main() {
 	if err := ew.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
+	set.Walk(func(schema *hyperschema.Schema, err error) error {
+		if schema != nil {
+			fmt.Println(schema.Types)
+		}
+		return nil
+	})
 	spew.Dump(set)
 
 	// if err := set.Validate(); err != nil {
