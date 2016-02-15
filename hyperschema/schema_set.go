@@ -171,12 +171,50 @@ func (s *SchemaSet) register(id string, raw *RawSchema) (schema *Schema, err *Er
 
 	//NOTE: Refの内容チェックは、Validateメソッドで明示的に行う。
 
-	if raw.Ref == "" && (types == nil || len(types) == 0) {
-		addError(&err, ErrorProperty(id, "$ref", ErrorPropertyTypeNil))
-		addError(&err, ErrorProperty(id, "type", ErrorPropertyTypeNil))
-	}
-	if raw.Ref != "" && types != nil && len(types) > 0 {
-		addError(&err, ErrorProperty(id, "$ref, type", ErrorPropertyTypeConflicted))
+	if raw.Ref == "" {
+		if len(types) == 0 {
+			// $refもtypeも指定されてないプロパティは存在できない
+			addError(&err, ErrorProperty(id, "$ref", ErrorPropertyTypeNil))
+			addError(&err, ErrorProperty(id, "type", ErrorPropertyTypeNil))
+		}
+	} else {
+		// $refが指定されているプロパティに、その他のプロパティ（ドキュメンテーション用のもの以外）が存在してはいけない
+		if len(types) > 0 {
+			addError(&err, ErrorProperty(id, "$ref, type", ErrorPropertyTypeConflicted))
+		}
+		if len(properties) > 0 {
+			addError(&err, ErrorProperty(id, "$ref, properties", ErrorPropertyTypeConflicted))
+		}
+		if raw.Pattern != "" {
+			addError(&err, ErrorProperty(id, "$ref, pattern", ErrorPropertyTypeConflicted))
+		}
+		if len(raw.Enum) > 0 {
+			addError(&err, ErrorProperty(id, "$ref, enum", ErrorPropertyTypeConflicted))
+		}
+		if items != nil {
+			addError(&err, ErrorProperty(id, "$ref, items", ErrorPropertyTypeConflicted))
+		}
+		if len(raw.Required) > 0 {
+			addError(&err, ErrorProperty(id, "$ref, required", ErrorPropertyTypeConflicted))
+		}
+		if raw.Min != nil {
+			addError(&err, ErrorProperty(id, "$ref, min", ErrorPropertyTypeConflicted))
+		}
+		if raw.MinValue != nil {
+			addError(&err, ErrorProperty(id, "$ref, minValue", ErrorPropertyTypeConflicted))
+		}
+		if raw.Max != nil {
+			addError(&err, ErrorProperty(id, "$ref, max", ErrorPropertyTypeConflicted))
+		}
+		if raw.MaxValue != nil {
+			addError(&err, ErrorProperty(id, "$ref, maxValue", ErrorPropertyTypeConflicted))
+		}
+		if raw.MinLength != 0 {
+			addError(&err, ErrorProperty(id, "$ref, minLength", ErrorPropertyTypeConflicted))
+		}
+		if raw.MaxLength != 0 {
+			addError(&err, ErrorProperty(id, "$ref, maxLength", ErrorPropertyTypeConflicted))
+		}
 	}
 
 	for _, t := range types {
@@ -190,8 +228,12 @@ func (s *SchemaSet) register(id string, raw *RawSchema) (schema *Schema, err *Er
 			if items == nil {
 				addError(&err, ErrorProperty(id, "items", ErrorPropertyTypeNil))
 			}
-		case "string", "bool", "boolean", "integer", "number":
+		case "bool", "boolean":
 			// noop
+		case "string", "integer", "number":
+			if raw.Example == nil {
+				addError(&err, ErrorProperty(id, "example", ErrorPropertyTypeNil))
+			}
 		default:
 			addError(&err, ErrorPropertyIncorrect(id, "type", t))
 		}

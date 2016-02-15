@@ -6,7 +6,7 @@ A simple checker for [PRMD](//github.com/interagent/prmd) JSON Hyper-Schema
 Installation
 ---
 ```sh
-go get github.com/kyoh86/jhs-check/...
+go get github.com/wacul/jhs-check/...
 ```
 
 Usage
